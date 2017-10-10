@@ -1,0 +1,21 @@
+{
+  "name": "webvr_experiments",
+  "version": "1.0.0",
+  "description": "Some random experiments to discover the WebVR API",
+  "main": "index.js",
+  "dependencies": {
+    "browser-sync": "^2.18.13",
+    "gulp": "^3.9.1",
+    "three": "^0.87.1"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mamboleoo/webvr_experiments.git"
+  },
+  "author": "Louis Hoebregts",
+  "bugs": {
+    "url": "https://github.com/Mamboleoo/webvr_experiments/issues"
+  },
+  "homepage": "https://github.com/Mamboleoo/webvr_experiments#readme"
+}
