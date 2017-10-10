@@ -6,6 +6,7 @@ gulp.task('browserSync', function() {
         server: {
             baseDir: "experiments/"
         },
+        browser: ["firefox"],
         options: {
             reloadDelay: 250
         },
