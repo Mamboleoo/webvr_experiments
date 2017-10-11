@@ -41,8 +41,27 @@ for(var i=0;i<amount;i++){
   });
   var cube = new THREE.Mesh(new THREE.BoxGeometry(0.2,0.2,0.2), material);
   cube.position.set(x, y, z);
-  cubes.add(cube);
+  // cubes.add(cube);
 }
+
+var cubeGeom = new THREE.BoxGeometry(0.1,0.1,0.1);
+function addCube(position, orientation) {
+    var material = new THREE.MeshBasicMaterial({
+        color: new THREE.Color('hsl('+(Math.random()*360)+',50%, 50%)'),
+        side: THREE.DoubleSide
+    });
+    var cube = new THREE.Mesh(cubeGeom, material);
+    cube.position.fromArray(position);
+    cube.quaternion.fromArray(orientation);
+    cubes.add(cube);
+}
+
+/* Create a ball to be the hand */
+var handGeom = new THREE.SphereGeometry(0.1);
+var handGeom = new THREE.BoxGeometry(0.1,0.1,0.1);
+var handMat = new THREE.MeshBasicMaterial({color:0xff0000});
+var hand = new THREE.Mesh(handGeom, handMat);
+scene.add(hand);
 
 /* Create a left and a right camera */
 var cameraL = new THREE.PerspectiveCamera();
@@ -82,9 +101,33 @@ function updateCamera () {
   return cameraVR;
 }
 
+// Tries to get any controller
+function getController() {
+    var gamepads = navigator.getGamepads && navigator.getGamepads();
+    if(gamepads.length) {
+        var gamepad = gamepads[0];
+        return gamepad;
+    }
+    return false;
+}
+
+var controller = null;
+var triggerPrevPressed = false;
 function render(a) {
   if (running) {
     vrDisplay.requestAnimationFrame(render);
+    controller = getController();
+    if(controller) {
+        hand.position.fromArray(controller.pose.position);
+        hand.quaternion.fromArray(controller.pose.orientation);
+        // If back trigger is pressed
+        if (controller.buttons[1].pressed && !triggerPrevPressed) {
+            addCube(controller.pose.position, controller.pose.orientation);
+            triggerPrevPressed = true;
+        } else if (!controller.buttons[1].pressed) {
+            triggerPrevPressed = false;
+        }
+    }
     camera = updateCamera(camera);
     renderer.render(scene, camera);
     vrDisplay.submitFrame();
@@ -135,3 +178,7 @@ function noVRRender() {
 }
 controls = new THREE.OrbitControls(camera, renderer.domElement);
 requestAnimationFrame(noVRRender);
+
+
+// Iterate across gamepads as Vive Controllers may not be
+// in position 0 and 1.
