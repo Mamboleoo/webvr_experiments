@@ -14,7 +14,8 @@ renderer.setSize(width, height);
 document.body.appendChild(renderer.domElement);
 
 var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera();
+var camera = new THREE.PerspectiveCamera(45, width/height, 0.1, 1000);
+camera.position.z = 10;
 
 /* CREATE MATRIX BOX */
 var boundingGeom = new THREE.BoxGeometry(2,2,2,8,8,8);
@@ -27,9 +28,8 @@ var mat = new THREE.MeshBasicMaterial({
 scene.add(new THREE.Mesh(boundingGeom, mat));
 
 /* BOXES CREATION */
-var amount = 36;
-var cubes = new THREE.Object3D();
-cubes.position.x = 1
+var amount = 100;
+var cubes = new THREE.Group();
 scene.add(cubes);
 for(var i=0;i<amount;i++){
   var material = new THREE.MeshBasicMaterial({
@@ -67,6 +67,12 @@ cameraVR.layers.enable(2);
 function goodCamera (camera) {
   vrDisplay.getFrameData(frameData);
 
+  var pose = frameData.pose;
+
+  camera.position.fromArray( pose.position );
+  camera.quaternion.fromArray( pose.orientation );
+  camera.updateMatrixWorld();
+
   cameraL.matrixWorldInverse.fromArray( frameData.leftViewMatrix );
   cameraR.matrixWorldInverse.fromArray( frameData.rightViewMatrix );
 
@@ -75,8 +81,7 @@ function goodCamera (camera) {
 
   // HACK @mrdoob
   // https://github.com/w3c/webvr/issues/203
-
-  // cameraVR.projectionMatrix.copy( cameraL.projectionMatrix );
+  cameraVR.projectionMatrix.copy( cameraL.projectionMatrix );
 
   return cameraVR;
 }
@@ -86,8 +91,8 @@ function render(a) {
   if (running) {
     vrDisplay.requestAnimationFrame(render);
   }
-  endCamera = goodCamera(camera);
-  renderer.render(scene, endCamera);
+  camera = goodCamera(camera);
+  renderer.render(scene, camera);
   vrDisplay.submitFrame();
 }
 
@@ -95,11 +100,13 @@ var canvas = renderer.domElement;
 var running = false;
 if(navigator.getVRDisplays){
   navigator.getVRDisplays().then(function(displays) {
-    if (displays.length === 0) {return;}
+    console.log(displays)
+    if (displays.length === 0) {
+      noVR();
+      return;
+    }
     frameData = new VRFrameData();
     vrDisplay = displays[0];
-    console.log('Display found : ');
-    console.log(displays);
     // Starting the presentation when the button is clicked: It can only be called in response to a user gesture
     startButton.addEventListener('click', function() {
       vrDisplay.requestPresent([{ source: canvas }]).then(function() {
@@ -110,10 +117,22 @@ if(navigator.getVRDisplays){
     stopButton.addEventListener('click', function() {
       vrDisplay.exitPresent().then(function(){
         running = false;
+        requestAnimationFrame(noVRRender);
       });
     });
   });
 } else {
-  document.querySelector('.actions').classList.add('is-hidden');
-  console.log('Your browser doesn\'t support WebVR yet');
+  noVR();
 }
+function noVRRender() {
+  if (!running) {
+    requestAnimationFrame(noVRRender);
+  }
+  renderer.render(scene, camera);
+}
+function noVR () {
+  console.log('Your browser doesn\'t support WebVR yet');
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  requestAnimationFrame(noVRRender);
+}
+noVR();
