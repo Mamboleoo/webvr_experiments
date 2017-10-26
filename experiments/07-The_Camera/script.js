@@ -4,9 +4,6 @@ var vrDisplay;
 var startButton = document.querySelector('.start');
 var stopButton = document.querySelector('.stop');
 
-var loader = new THREE.TextureLoader();
-var dotMap = loader.load('/_assets/img/dotTexture.png');
-
 /* Init ThreeJs */
 var renderer = new THREE.WebGLRenderer();
 renderer.setPixelRatio(2);
@@ -17,46 +14,42 @@ document.body.appendChild(renderer.domElement);
 
 /* Create a scene and a camera */
 var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera(45, width/height, 0.1, 50);
+var camera = new THREE.PerspectiveCamera(45, width/height, 0.01, 10);
 camera.position.z = 5;
+scene.add(camera);
 
-// FLOOR
+/* Create outside box */
 var mat = new THREE.MeshBasicMaterial({
   color: 0x00ff00,
   wireframe:true,
   transparent: true,
   opacity: 0.2
 });
+
+// FLOOR
 var geometry = new THREE.PlaneGeometry(5, 5, 12, 12);
-var plane = new THREE.Mesh( geometry, mat );
-plane.rotation.x = Math.PI * 0.5;
-scene.add(plane);
+var floor = new THREE.Mesh( geometry, mat );
+floor.rotation.x = Math.PI * 0.5;
+scene.add(floor);
 
-// var axisHelper = new THREE.AxisHelper( 1 );
-// scene.add( axisHelper );
-
-var light = new THREE.HemisphereLight( 0xffffbb, 0x080820, 1 );
-scene.add( light );
-
-// Create a dumb cursor
-var cursorGeom = new THREE.SphereGeometry(0.01);
-var cursorMat = new THREE.MeshBasicMaterial({color: 0xff0000});
-var cursor = new THREE.Mesh(cursorGeom, cursorMat);
-scene.add(cursor)
-
-var mtlLoader = new THREE.MTLLoader();
-mtlLoader.load( 'tex.mtl', function( materials ) {
-    materials.preload();
-    var objLoader = new THREE.OBJLoader();
-    objLoader.setMaterials( materials );
-    objLoader.load( 'mesh.obj', function ( object ) {
-        var gourds = object.children[0]
-        gourds.geometry.computeBoundingSphere();
-        gourds.scale.set(0.05, 0.05, 0.05);
-        gourds.rotation.x = -Math.PI / 2;
-        scene.add(gourds);
-    });
+// Video screen
+var geometry = new THREE.PlaneGeometry(0.2, 0.2);
+var mat = new THREE.MeshBasicMaterial({
+  color: 0xffffff
 });
+var videoScreen = new THREE.Mesh( geometry, mat );
+videoScreen.position.z = -0.2;
+videoScreen.frustumCulled = false;
+camera.add(videoScreen);
+
+
+/* Create a ball to be the hand */
+var cursor = new THREE.Group();
+scene.add(cursor);
+var handGeom = new THREE.SphereGeometry(0.01);
+var handMat = new THREE.MeshBasicMaterial({color:0xff0000, transparent: true});
+var hand = new THREE.Mesh(handGeom, handMat);
+cursor.add(hand);
 
 /* Create a left and a right camera */
 var cameraL = new THREE.PerspectiveCamera();
@@ -107,8 +100,7 @@ function getController() {
 }
 
 var controller = null;
-var triggers = [false, false];
-
+var outputCamera;
 function render(a) {
   if (running) {
     vrDisplay.requestAnimationFrame(render);
@@ -116,19 +108,27 @@ function render(a) {
     if(controller) {
         cursor.position.fromArray(controller.pose.position);
         cursor.quaternion.fromArray(controller.pose.orientation);
-        if (controller.buttons[1].pressed && !triggers[1]) {
-            vrDisplay.resetPose();
-            console.log("resertd");
-            triggers[1] = true;
-        } else if (triggers[1]) {
-            triggers[1] = false;
-        }
     }
-
-    camera = updateCamera(camera);
-    renderer.render(scene, camera);
+    outputCamera = updateCamera(camera);
+    renderer.render(scene, outputCamera);
     vrDisplay.submitFrame();
   }
+}
+
+var videoTexture;
+function onVideoSuccess (stream) {
+    var video = document.createElement('video');
+    var videoTracks = stream.getVideoTracks();
+    window.stream = stream;
+    video.srcObject = stream;
+    video.play();
+
+    videoTexture = new THREE.VideoTexture(video);
+    videoTexture.minFilter = THREE.LinearFilter;
+    videoTexture.magFilter = THREE.LinearFilter;
+    videoTexture.format = THREE.RGBFormat;
+    videoScreen.material.map = videoTexture;
+    videoScreen.material.needsUpdate = true;
 }
 
 var running = false;
@@ -143,10 +143,23 @@ if(navigator.getVRDisplays){
 
     /* Start VR when user press Start */
     startButton.addEventListener('click', function() {
-      vrDisplay.requestPresent([{ source: renderer.domElement }]).then(function() {
-        running = true;
-        vrDisplay.requestAnimationFrame(render);
-      });
+        /* WHEN RUNING, TRY TO ACCESS THE CAMERA */
+        var video = document.querySelector('video');
+        var constraints = window.constraints = {
+            audio: false,
+            video: true
+        };
+        navigator.mediaDevices.getUserMedia(constraints).
+            then(onVideoSuccess)
+            .catch(function () {
+                console.log('ERROR');
+                console.log(arguments);
+            });
+        // Start VR
+        vrDisplay.requestPresent([{ source: renderer.domElement }]).then(function() {
+            running = true;
+            vrDisplay.requestAnimationFrame(render);
+        });
     });
 
     /* When user wants to exit the VR */
