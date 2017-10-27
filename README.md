@@ -24,7 +24,7 @@ This is my WebVR playground and you are all invited to participate !
 [![Experiment 04](https://mamboleoo.be/lab/WebVR/demos/04.gif)](https://mamboleoo.be/lab/WebVR/04-The_Painter/)
 
 ### [05-The_Dots](https://mamboleoo.be/lab/WebVR/05-The_Dots/)
-[![Experiment 05](https://mamboleoo.be/lab/WebVR/demos/05.gif)](://mamboleoo.be/lab/WebVR/05-The_Dots/)
+[![Experiment 05](https://mamboleoo.be/lab/WebVR/demos/05.gif)](https://mamboleoo.be/lab/WebVR/05-The_Dots/)
 
 ### [06-The_Gourds](https://mamboleoo.be/lab/WebVR/06-The_Gourds/)
 [![Experiment 06](https://mamboleoo.be/lab/WebVR/demos/06.gif)](https://mamboleoo.be/lab/WebVR/06-The_Gourds/)

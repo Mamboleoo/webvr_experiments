@@ -4,9 +4,6 @@ var vrDisplay;
 var startButton = document.querySelector('.start');
 var stopButton = document.querySelector('.stop');
 
-var loader = new THREE.TextureLoader();
-var dotMap = loader.load('/_assets/img/dotTexture.png');
-
 /* Init ThreeJs */
 var renderer = new THREE.WebGLRenderer();
 renderer.setPixelRatio(2);
